@@ -1,13 +1,24 @@
 import "./index.css";
 
+// Apply saved theme before first render to avoid flash
+const savedTheme = localStorage.getItem("theme") ?? "dark";
+const root = document.documentElement;
+root.classList.remove("dark", "solarized-light");
+if (savedTheme === "dark") root.classList.add("dark");
+else if (savedTheme === "solarized-light") root.classList.add("solarized-light");
+
 import { RouterProvider } from "react-router";
 import { StrictMode } from "react";
 import { createRoot } from "react-dom/client";
 import { router } from "./routes.jsx";
 import Cookies from "js-cookie";
 
+import { lazy, Suspense } from "react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { ReactQueryDevtools } from "@tanstack/react-query-devtools";
+
+const ReactQueryDevtools = import.meta.env.DEV
+  ? lazy(() => import("@tanstack/react-query-devtools").then(m => ({ default: m.ReactQueryDevtools })))
+  : null;
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -84,7 +95,11 @@ createRoot(document.getElementById("root")).render(
   <StrictMode>
     <QueryClientProvider client={queryClient}>
       <RouterProvider router={router} />
-      <ReactQueryDevtools initialIsOpen={false} />
+      {import.meta.env.DEV && ReactQueryDevtools && (
+        <Suspense fallback={null}>
+          <ReactQueryDevtools initialIsOpen={false} />
+        </Suspense>
+      )}
     </QueryClientProvider>
   </StrictMode>
 );

@@ -47,8 +47,8 @@ const ToolbarButton = ({ onClick, active, disabled, children, title }) => (
 
 const ContentSkeleton = ({ canEdit }) => (
   <div className="flex flex-col gap-2">
-    <div className="font-medium text-sm h-5">Content</div>
-    <div className="border rounded-md overflow-hidden">
+    <div className="text-xs font-medium text-muted-foreground uppercase tracking-wide mb-2">Content</div>
+    <div className="rounded-md overflow-hidden bg-muted/50">
       {canEdit && (
         <div className="flex items-center gap-0.5 px-2 py-1 border-b bg-muted/30">
           {Array.from({ length: 6 }).map((_, i) => (
@@ -198,13 +198,20 @@ function EditorWrapper({
     <div className="flex flex-col gap-2">
       {/* Header */}
       <div className="flex items-center justify-between h-5">
-        <span className="font-medium text-sm">Content</span>
+        <span className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Content</span>
         {canEdit && !previewMode && (
           <button
             onClick={handleRewrite}
             disabled={isRewriting || isPending || !editor.getText().trim()}
             title={!editor.getText().trim() ? "Add some content before rewriting" : "Rewrite with AI"}
-            className="flex items-center gap-1.5 px-2.5 py-1 rounded-md border border-violet-500/30 bg-violet-600/10 text-violet-300 text-xs hover:bg-violet-600/20 hover:border-violet-500/50 disabled:opacity-40 disabled:cursor-not-allowed transition-all duration-150"
+            className="flex items-center gap-1.5 px-2.5 py-1 rounded-md border text-xs disabled:opacity-40 disabled:cursor-not-allowed transition-all duration-150"
+            style={{
+              color: "hsl(var(--ai-accent))",
+              backgroundColor: "hsl(var(--ai-accent-bg))",
+              borderColor: "hsl(var(--ai-accent-border))",
+            }}
+            onMouseEnter={e => e.currentTarget.style.backgroundColor = "hsl(var(--ai-accent-hover-bg))"}
+            onMouseLeave={e => e.currentTarget.style.backgroundColor = "hsl(var(--ai-accent-bg))"}
           >
             <Sparkles className={cn("h-3 w-3", isRewriting && "animate-pulse")} />
             {isRewriting ? "Rewriting…" : "Rewrite"}
@@ -215,12 +222,8 @@ function EditorWrapper({
       <PresenceField field="content" fieldEditors={fieldEditors} roomUsers={roomUsers}>
         <div
           className={cn(
-            "border rounded-md transition-colors overflow-hidden",
-            previewMode
-              ? "border-violet-500/50 ring-1 ring-violet-500/25"
-              : isFocused && canEdit
-              ? "border-ring ring-1 ring-ring"
-              : "border-input",
+            "rounded-md transition-colors overflow-hidden bg-muted/50",
+            previewMode && "ring-1 ring-[hsl(var(--ai-accent-border))]",
             !canEdit && !previewMode && "opacity-60"
           )}
         >
@@ -252,7 +255,7 @@ function EditorWrapper({
                 onClick={handleSave}
                 disabled={isPending || !isDirty}
                 title={!isDirty ? "No changes to save" : "Save changes"}
-                className="flex items-center gap-1 px-2 h-7 rounded text-xs font-medium text-blue-400 border border-blue-500/30 bg-blue-500/10 hover:bg-blue-500/20 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+                className="flex items-center gap-1 px-2 h-7 rounded text-xs font-medium text-[hsl(var(--ai-accent))] border border-[hsl(var(--ai-accent-border))] bg-[hsl(var(--ai-accent-bg))] hover:bg-[hsl(var(--ai-accent-hover-bg))] disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
               >
                 <Save className="h-3.5 w-3.5" />
                 {isPending ? "Saving…" : isDirty ? "Save" : "No changes"}
@@ -262,9 +265,9 @@ function EditorWrapper({
 
           {/* Preview banner */}
           {previewMode && (
-            <div className="flex items-center gap-1.5 px-3 py-1.5 border-b border-violet-500/30 bg-violet-500/10">
-              <Sparkles className="h-3 w-3 text-violet-400 shrink-0" />
-              <span className="text-xs text-violet-300">AI rewrite preview — review before applying</span>
+            <div className="flex items-center gap-1.5 px-3 py-1.5 border-b" style={{ borderColor: "hsl(var(--ai-accent-border))", backgroundColor: "hsl(var(--ai-accent-bg))" }}>
+              <Sparkles className="h-3 w-3 shrink-0" style={{ color: "hsl(var(--ai-accent))" }} />
+              <span className="text-xs" style={{ color: "hsl(var(--ai-accent))" }}>AI rewrite preview — review before applying</span>
             </div>
           )}
 
@@ -273,7 +276,7 @@ function EditorWrapper({
             className={cn(
               "prose prose-sm max-w-none px-3 py-2 min-h-[120px] text-sm focus-within:outline-none",
               "[&_.ProseMirror]:outline-none [&_.ProseMirror]:min-h-[100px]",
-              previewMode && "bg-violet-950/10"
+              previewMode && "bg-[hsl(var(--ai-accent-bg))]"
             )}
           />
 
@@ -292,7 +295,7 @@ function EditorWrapper({
 
       {/* Rewrite error */}
       {rewriteError && (
-        <div className="flex items-center gap-2 px-3 py-2 rounded-md bg-red-500/10 border border-red-500/20 text-red-400 text-xs">
+        <div className="flex items-center gap-2 px-3 py-2 rounded-md bg-destructive/10 border border-destructive/20 text-destructive text-xs">
           <XCircle className="h-3.5 w-3.5 shrink-0" />
           {rewriteError}
         </div>
@@ -306,7 +309,7 @@ function EditorWrapper({
             <button
               onClick={handleApply}
               disabled={isPending}
-              className="flex items-center gap-1.5 px-2.5 py-1 rounded-md text-xs text-green-400 border border-green-500/30 bg-green-500/10 hover:bg-green-500/20 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+              className="flex items-center gap-1.5 px-2.5 py-1 rounded-md text-xs text-[hsl(var(--success))] border border-[hsl(var(--success-border))] bg-[hsl(var(--success-muted))] hover:bg-[hsl(var(--success-muted))] disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
             >
               <Check className="h-3.5 w-3.5" />
               Apply
@@ -315,13 +318,13 @@ function EditorWrapper({
               onClick={handleCopy}
               className="flex items-center gap-1.5 px-2.5 py-1 rounded-md text-xs text-muted-foreground border border-border hover:bg-muted hover:text-foreground transition-colors"
             >
-              {copied ? <ClipboardCheck className="h-3.5 w-3.5 text-green-400" /> : <Copy className="h-3.5 w-3.5" />}
+              {copied ? <ClipboardCheck className="h-3.5 w-3.5 text-[hsl(var(--success))]" /> : <Copy className="h-3.5 w-3.5" />}
               {copied ? "Copied!" : "Copy"}
             </button>
             <button
               onClick={handleDiscard}
               disabled={isPending}
-              className="flex items-center gap-1.5 px-2.5 py-1 rounded-md text-xs text-red-400 border border-red-500/30 bg-red-500/10 hover:bg-red-500/20 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+              className="flex items-center gap-1.5 px-2.5 py-1 rounded-md text-xs text-destructive border border-destructive/30 bg-destructive/10 hover:bg-destructive/20 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
             >
               <X className="h-3.5 w-3.5" />
               Discard
@@ -331,19 +334,18 @@ function EditorWrapper({
       )}
 
       {showMessage && isSuccess && !previewMode && (
-        <Alert className="bg-green-50 border-green-200">
+        <Alert className="bg-[hsl(var(--success-muted))] border-[hsl(var(--success-border))]">
           <div className="flex items-center gap-2">
-            <CheckCircle2 className="h-4 w-4 text-green-600" />
-            <AlertDescription className="text-green-800 text-sm">Content saved successfully!</AlertDescription>
+            <CheckCircle2 className="h-4 w-4 text-[hsl(var(--success))]" />
+            <AlertDescription className="text-[hsl(var(--success))] text-sm">Content saved successfully!</AlertDescription>
           </div>
         </Alert>
       )}
-
       {showMessage && error && (
-        <Alert className="bg-red-50 border-red-200">
+        <Alert className="bg-destructive/10 border-destructive/30">
           <div className="flex items-center gap-2">
-            <XCircle className="h-4 w-4 text-red-600" />
-            <AlertDescription className="text-red-800 text-sm">Failed to save content. Please try again.</AlertDescription>
+            <XCircle className="h-4 w-4 text-destructive" />
+            <AlertDescription className="text-destructive text-sm">Failed to save content. Please try again.</AlertDescription>
           </div>
         </Alert>
       )}

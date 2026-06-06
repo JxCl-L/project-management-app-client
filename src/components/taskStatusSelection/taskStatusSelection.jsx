@@ -1,13 +1,6 @@
 import { useEffect, useState } from "react";
 import { useUpdateTask } from "@/hooks/useUpdateTask.hook.js";
-import { Alert, AlertDescription } from "@/components/ui/alert";
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipTrigger,
-  TooltipProvider,
-} from "@/components/ui/tooltip";
-import { CheckCircle2, XCircle, Check } from "lucide-react";
+import { Check } from "lucide-react";
 
 export default function TaskStatusSelection({
   projectId,
@@ -50,25 +43,26 @@ export default function TaskStatusSelection({
   };
 
   return (
-    <TooltipProvider>
-      <Tooltip>
-        <div className="flex-1">
-          <div className="font-medium text-sm mb-2 h-5">Status</div>
+    <div className="flex-1">
+          <div className="flex items-center gap-2 mb-2">
+            <span className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Status</span>
+            {showMessage && isSuccess && <span className="text-xs text-[hsl(var(--success))] transition-opacity duration-300">✓ Updated</span>}
+            {showMessage && error && <span className="text-xs text-destructive transition-opacity duration-300">✗ Failed</span>}
+          </div>
 
+          <div className={`py-2 min-w-72 flex-[2] ${isDisabled ? "opacity-60 cursor-not-allowed" : ""}`}>
           <div
-            className={`h-10 min-w-56 text-sm flex flex-col items-center
-        ${isDisabled && "cursor-not-allowed"}`}
+            className={`text-sm flex flex-col items-center ${isDisabled && "cursor-not-allowed"}`}
           >
             {/* Status Select Bar */}
-            <TooltipTrigger asChild>
               <div
-                className={`flex flex-row items-center justify-between w-full px-3 group
+                className={`flex flex-row items-center justify-between w-full group
           ${isDisabled ? "" : "cursor-pointer"}`}
               >
                 {/* Todo */}
 
                 <div
-                  className={`todo w-4 h-4 border-solid border-4 rounded-full border-red-500 bg-red-500 z-10 
+                  className={`todo w-4 h-4 border-solid border-4 rounded-full border-[hsl(var(--status-todo))] bg-[hsl(var(--status-todo))] z-10
                 transition-all duration-200
                 flex items-center justify-center
                 ${
@@ -84,10 +78,10 @@ export default function TaskStatusSelection({
                 {/* Line 1 */}
                 <div
                   className={`flex-1 h-1 -mx-0.5 relative overflow-hidden
-            ${currentStatus === "todo" ? "bg-gray-300" : "bg-green-500"}`}
+            ${currentStatus === "todo" ? "bg-[hsl(var(--status-inactive-track))]" : "bg-[hsl(var(--status-active-track))]"}`}
                 >
                   <div
-                    className="absolute inset-0 bg-green-500 w-0 
+                    className="absolute inset-0 bg-[hsl(var(--status-active-track))] w-0
                   transition-all duration-500 ease-out
                   group-has-[.in-progress:hover]:w-full
                   group-has-[.completed:hover]:w-full
@@ -98,14 +92,14 @@ export default function TaskStatusSelection({
 
                 {/* In Progress */}
                 <div
-                  className={`in-progress w-4 h-4 border-solid border-4 rounded-full border-orange-500 z-10 
+                  className={`in-progress w-4 h-4 border-solid border-4 rounded-full border-[hsl(var(--status-in-progress))] z-10
                 transition-all duration-200
                 flex items-center justify-center
                 ${
                   !isDisabled &&
                   "cursor-pointer hover:scale-150 hover:shadow-lg"
                 }
-                ${currentStatus === "todo" ? "bg-white" : "bg-orange-500"}
+                ${currentStatus === "todo" ? "bg-background" : "bg-[hsl(var(--status-in-progress))]"}
                 ${currentStatus === "inProgress" && "scale-125 shadow-lg"}`}
                   onClick={() =>
                     !isDisabled && handleStatusChange("inProgress")
@@ -119,10 +113,10 @@ export default function TaskStatusSelection({
                 {/* Line 2 */}
                 <div
                   className={`flex-1 h-1 -mx-0.5 relative overflow-hidden
-            ${currentStatus === "completed" ? "bg-green-500" : "bg-gray-300"}`}
+            ${currentStatus === "completed" ? "bg-[hsl(var(--status-active-track))]" : "bg-[hsl(var(--status-inactive-track))]"}`}
                 >
                   <div
-                    className="absolute inset-0 bg-green-500 w-0 
+                    className="absolute inset-0 bg-[hsl(var(--status-active-track))] w-0
                   transition-all duration-500 ease-out
                   group-has-[.completed:hover]:w-full
                   group-has-[.completed:hover]:delay-500
@@ -132,7 +126,7 @@ export default function TaskStatusSelection({
 
                 {/* Completed */}
                 <div
-                  className={`completed w-4 h-4 border-solid border-4 rounded-full border-green-500 z-10 
+                  className={`completed w-4 h-4 border-solid border-4 rounded-full border-[hsl(var(--status-completed))] z-10
                 transition-all duration-200
                 flex items-center justify-center
                 ${
@@ -141,8 +135,8 @@ export default function TaskStatusSelection({
                 }
                 ${
                   currentStatus === "completed"
-                    ? "bg-green-500 scale-125 shadow-lg"
-                    : "bg-white"
+                    ? "bg-[hsl(var(--status-completed))] scale-125 shadow-lg"
+                    : "bg-background"
                 }`}
                   onClick={() => !isDisabled && handleStatusChange("completed")}
                 >
@@ -151,8 +145,6 @@ export default function TaskStatusSelection({
                   )}
                 </div>
               </div>
-            </TooltipTrigger>
-
             {/* Labels */}
             <div className="flex flex-row items-center w-11/12 justify-between">
               <div
@@ -178,44 +170,9 @@ export default function TaskStatusSelection({
               </div>
             </div>
           </div>
-
-          <TooltipContent side="bottom">
-            <p>
-              {!canEdit
-                ? "You don't have permission to modify this task"
-                : isPending
-                  ? "Updating status..."
-                  : "Select task status"}
-            </p>
-          </TooltipContent>
+          </div>
 
           {/* Success message */}
-          {showMessage && isSuccess && (
-            <Alert className="mt-2 bg-green-50 border-green-200">
-              <div className="flex items-center gap-2">
-                <CheckCircle2 className="h-4 w-4 text-green-600" />
-                <AlertDescription className="text-green-800 text-sm">
-                  Task status updated successfully!
-                </AlertDescription>
-              </div>
-            </Alert>
-          )}
-
-          {/* Error message */}
-          {showMessage && error && (
-            <Alert className="mt-2 bg-red-50 border-red-200">
-              <div className="flex items-center gap-2">
-                <XCircle className="h-4 w-4 text-red-600" />
-                <AlertDescription className="text-red-800 text-sm">
-                  {error?.response?.status === 403
-                    ? "You don't have permission to modify this task"
-                    : "Failed to update status. Please try again."}
-                </AlertDescription>
-              </div>
-            </Alert>
-          )}
-        </div>
-      </Tooltip>
-    </TooltipProvider>
+    </div>
   );
 }

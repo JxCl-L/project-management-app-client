@@ -14,7 +14,8 @@ import { useFetchProject } from "@/hooks/useFetchProject.hook.js";
 import TaskPrioritySelection from "@/components/taskPrioritySelection/taskPrioritySelection.jsx";
 import TaskStatusSelection from "@/components/taskStatusSelection/taskStatusSelection.jsx";
 import TaskDescriptionEdit from "@/components/taskDescriptionEdit/taskDescriptionEdit.jsx";
-import TaskContentEdit from "@/components/taskContentEdit/taskContentEdit.jsx";
+import { lazy, Suspense } from "react";
+const TaskContentEdit = lazy(() => import("@/components/taskContentEdit/taskContentEdit.jsx"));
 import TaskTitleEdit from "@/components/taskTitleEdit/taskTitleEdit.jsx";
 import { useTaskPresence } from "@/hooks/useTaskPresence.js";
 import { PresenceAvatarStack } from "@/components/task/PresenceAvatarStack.jsx";
@@ -130,18 +131,14 @@ export default function Task() {
   return (
     <div className="flex flex-col basis-11/12 p-8">
       {/* breadcrumb */}
-      <Breadcrumb>
+      <Breadcrumb className="px-8 mb-2">
         <BreadcrumbList>
           <BreadcrumbItem>
-            <BreadcrumbLink
-              onClick={(e) => {
-                e.preventDefault();
-                navigate(-1); // Go back to the previous page
-              }}
-              href={`/projects/${projectId}/tasks`}
-            >
-              All Tasks
-            </BreadcrumbLink>
+            <BreadcrumbLink href="/projects">Projects</BreadcrumbLink>
+          </BreadcrumbItem>
+          <BreadcrumbSeparator />
+          <BreadcrumbItem>
+            <BreadcrumbLink href={`/projects/${projectId}/tasks`}>Tasks</BreadcrumbLink>
           </BreadcrumbItem>
           <BreadcrumbSeparator />
           <BreadcrumbItem>
@@ -156,28 +153,20 @@ export default function Task() {
         {/* task header */}
 
         <header className="p-8">
-          <div className="flex flex-row justify-between items-center gap-4">
-            <TaskTitleEdit
-              projectId={projectId}
-              taskId={_id}
-              initialTitle={title}
-              role={projectData?.data?.currentUserRole}
-            />
-            <div className="flex items-center gap-3">
-              <PresenceAvatarStack roomUsers={roomUsers} />
-              <div className="flex items-center gap-1 text-sm text-center text-gray-400">
-                <span>
-                  Created by{" "}
-                  <span className="text-gray-100">{creatorName}</span>
-                </span>
-                <span>•</span>
-                <span>{formatDate(createdAt)}</span>
-              </div>
+          <div className="flex flex-col gap-2">
+            {/* Row 1: title + delete */}
+            <div className="flex flex-row justify-between items-start gap-4">
+              <TaskTitleEdit
+                projectId={projectId}
+                taskId={_id}
+                initialTitle={title}
+                role={projectData?.data?.currentUserRole}
+              />
               {projectData?.data?.currentUserRole === "manager" && (
                 <AlertDialog>
                   <AlertDialogTrigger asChild>
                     <button
-                      className="p-1.5 rounded-md text-muted-foreground hover:text-red-400 hover:bg-red-500/10 transition-colors"
+                      className="p-1.5 rounded-md text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-colors flex-shrink-0"
                       aria-label="Delete task"
                     >
                       <Trash2 className="h-4 w-4" />
@@ -195,7 +184,7 @@ export default function Task() {
                       <AlertDialogAction
                         onClick={handleDelete}
                         disabled={isDeleting}
-                        className="bg-red-600 hover:bg-red-700 focus:ring-red-600"
+                        className="bg-destructive hover:bg-destructive/90 focus:ring-destructive"
                       >
                         {isDeleting ? "Deleting…" : "Delete"}
                       </AlertDialogAction>
@@ -204,11 +193,20 @@ export default function Task() {
                 </AlertDialog>
               )}
             </div>
+            {/* Row 2: avatars + creator + date */}
+            <div className="flex items-center gap-3">
+              <PresenceAvatarStack roomUsers={roomUsers} />
+              <div className="flex items-center gap-1.5 text-sm text-muted-foreground">
+                <span>Created by <span className="text-foreground">{creatorName}</span></span>
+                <span>·</span>
+                <span>{formatDate(createdAt)}</span>
+              </div>
+            </div>
           </div>
         </header>
 
-        <div className="flex flex-col gap-4 px-8">
-          <div className="flex flex-row gap-4 h-20">
+        <div className="flex flex-col gap-6 px-8">
+          <div className="flex flex-row gap-4">
             {/* due date */}
             <TaskDueDateSelection
               projectId={projectId}
@@ -245,15 +243,17 @@ export default function Task() {
             onFieldBlur={emitFieldBlur}
           />
           {/* content */}
-          <TaskContentEdit
-            projectId={projectId}
-            taskId={_id}
-            role={projectData?.data?.currentUserRole}
-            fieldEditors={fieldEditors}
-            roomUsers={roomUsers}
-            onFieldFocus={emitFieldFocus}
-            onFieldBlur={emitFieldBlur}
-          />
+          <Suspense fallback={null}>
+            <TaskContentEdit
+              projectId={projectId}
+              taskId={_id}
+              role={projectData?.data?.currentUserRole}
+              fieldEditors={fieldEditors}
+              roomUsers={roomUsers}
+              onFieldFocus={emitFieldFocus}
+              onFieldBlur={emitFieldBlur}
+            />
+          </Suspense>
         </div>
 
         {/* } */}

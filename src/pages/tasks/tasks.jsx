@@ -1,18 +1,28 @@
 import { FilterBar } from "@/components/filterBar/filterBar.jsx";
 import { TaskCard } from "@/components/taskCard/taskCard.jsx";
-import { TasksCounter } from "@/components/tasksCounter/tasksCounter.jsx";
+import { TasksProgressBar } from "@/components/tasksCounter/tasksCounter.jsx";
+import { ProjectHeaderEditable } from "@/components/projectHeaderEditable/projectHeaderEditable.jsx";
+import { Toaster } from "@/components/ui/toaster";
 import { TaskSidebar } from "@/components/taskSidebar/taskSidebar.jsx";
 import { useFetchTasks } from "@/hooks/useFetchTasks.hook.js";
 import { useFetchProjects } from "@/hooks/useFetchProjects.hook.js";
-import { useState } from "react";
+import { useState, lazy, Suspense, useEffect } from "react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useSearchParams, useParams } from "react-router";
 import Cookies from "js-cookie";
+import {
+  Breadcrumb,
+  BreadcrumbItem,
+  BreadcrumbLink,
+  BreadcrumbList,
+  BreadcrumbPage,
+  BreadcrumbSeparator,
+} from "@/components/ui/breadcrumb";
 import { ProjectSidebar } from "@/components/projectSidebar/projectSidebar.jsx";
-import { SidebarProvider, SidebarInset, SidebarTrigger } from "@/components/ui/sidebar";
+import { SidebarProvider, SidebarInset, SidebarTrigger, useSidebar } from "@/components/ui/sidebar";
 import { CreateTaskDialog } from "@/components/createTaskDialog/createTaskDialog.jsx";
 import { TaskPagination } from "@/components/taskPagination/taskPagination.jsx";
-import { AiPanel } from "@/components/aiPanel/aiPanel.jsx";
+const AiPanel = lazy(() => import("@/components/aiPanel/aiPanel.jsx").then(m => ({ default: m.AiPanel })));
 import { Sparkles } from "lucide-react";
 
 function DisplaySkeleton() {
@@ -38,6 +48,13 @@ function todaysDate() {
   return today.toLocaleDateString("en-GB", options);
 }
 
+
+function ClosedSidebarTrigger() {
+  const { open, isMobile } = useSidebar();
+  if (!isMobile && open) return null;
+  return <SidebarTrigger className="fixed top-4 left-4 z-30" />;
+}
+
 export default function Tasks() {
   const { projectId } = useParams();
   const [searchParams, setSearchParams] = useSearchParams();
@@ -61,123 +78,129 @@ export default function Tasks() {
     status: queryStatus,
   });
 
+  // Prefetch AI panel chunk once tasks have loaded so first click is instant
+  useEffect(() => {
+    if (data) import("@/components/aiPanel/aiPanel.jsx");
+  }, [!!data]);
+
   const defaultSidebarOpen = Cookies.get("sidebar_state") !== "false";
 
   return (
     <SidebarProvider defaultOpen={defaultSidebarOpen}>
       <ProjectSidebar />
       <SidebarInset>
+        <ClosedSidebarTrigger />
         {/* Main Content */}
         <main className="flex flex-col p-8 overflow-y-auto h-full">
-          {/* Project Header */}
-          <header className="mb-4 flex flex-row justify-between min-w-96">
-            <SidebarTrigger className="md:hidden self-start mt-1 mr-2" />
-            <div className="flex flex-col">
-              <h1 className="text-2xl font-semibold mb-2">
-                {project?.name || "Project"}
-              </h1>
-              <p className="text-muted-foreground text-sm">
-                {project?.description || "No description available"}
-              </p>
+          <div className="w-11/12 mx-auto">
+
+            {/* Top bar */}
+            <div className="flex items-center justify-between mb-6">
+              <div className="flex items-center gap-3">
+                <Breadcrumb>
+                  <BreadcrumbList>
+                    <BreadcrumbItem>
+                      <BreadcrumbLink href="/projects">Projects</BreadcrumbLink>
+                    </BreadcrumbItem>
+                    <BreadcrumbSeparator />
+                    <BreadcrumbItem>
+                      <BreadcrumbPage>Tasks</BreadcrumbPage>
+                    </BreadcrumbItem>
+                  </BreadcrumbList>
+                </Breadcrumb>
+              </div>
+              <div className="flex items-center gap-2">
+                <button
+                  onClick={() => {
+                    setIsAiPanelOpen((v) => !v);
+                    setAiPanelEverOpened(true);
+                  }}
+                  className={`flex items-center gap-1.5 px-4 h-10 rounded-md border text-sm font-medium transition-all duration-150 ${
+                    isAiPanelOpen
+                      ? "border-[hsl(var(--ai-accent-border))] text-[hsl(var(--ai-accent))] bg-[hsl(var(--ai-accent-bg))]"
+                      : "border-border text-foreground hover:bg-muted"
+                  }`}
+                >
+                  <Sparkles className="h-3.5 w-3.5" />
+                  AI
+                </button>
+                {project?.permissions?.canCreateTask && (
+                  <CreateTaskDialog
+                    onClick={() => setIsCreateTaskDialogOpen(true)}
+                    open={isCreateTaskDialogOpen}
+                    onOpenChange={setIsCreateTaskDialogOpen}
+                  />
+                )}
+              </div>
             </div>
-            <div className="flex items-center gap-2">
-              <button
-                onClick={() => {
-                  setIsAiPanelOpen((v) => !v);
-                  setAiPanelEverOpened(true);
-                }}
-                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg border text-sm transition-all duration-150 ${
-                  isAiPanelOpen
-                    ? "bg-violet-600/20 border-violet-500/40 text-violet-300"
-                    : "border-border text-foreground hover:bg-muted"
-                }`}
-              >
-                <Sparkles className="h-3.5 w-3.5" />
-                AI
-              </button>
-              {project?.permissions?.canCreateTask && (
-                <CreateTaskDialog
-                  onClick={() => setIsCreateTaskDialogOpen(true)}
-                  open={isCreateTaskDialogOpen}
-                  onOpenChange={setIsCreateTaskDialogOpen}
+
+            {/* Project Header */}
+            <header className="mb-6">
+              <ProjectHeaderEditable project={project} />
+            </header>
+
+            {/* Progress bar */}
+            {data && data.data && (
+              <TasksProgressBar
+                todo={data.pagination.meta.todoTasks}
+                inProgress={data.pagination.meta.inProgressTasks}
+                completed={data.pagination.meta.completedTasks}
+              />
+            )}
+
+            {/* Filter bar */}
+            {data && data.data && (
+              <FilterBar paginationData={data.pagination} />
+            )}
+
+            {/* Skeletons while loading */}
+            {!data &&
+              [...Array(queryLimit)].map((_entry, index) => (
+                <DisplaySkeleton key={`${index}skel`} />
+              ))}
+
+            {/* Empty state */}
+            {data && data.data.length === 0 && (
+              <div className="flex justify-center mt-16">
+                <h2 className="text-muted-foreground text-lg">No tasks found</h2>
+              </div>
+            )}
+
+            {/* Task cards */}
+            {data &&
+              data.data.length > 0 &&
+              data.data.map((task) => (
+                <TaskCard
+                  key={task._id}
+                  title={task.title}
+                  description={task.description}
+                  status={task.status}
+                  priority={task.priority}
+                  dueDate={new Date(task.dueDate)}
+                  id={task._id}
+                  permissions={project?.permissions || {}}
                 />
-              )}
-            </div>
-          </header>
+              ))}
 
-          {/* Tasks Section */}
-          <div className="flex flex-col w-full items-center pt-4">
-            <div className="w-11/12 flex flex-col items-center">
-              {/* tasks counters */}
-              {data && data.data && (
-                <div className="flex flex-row justify-between mb-8 w-full min-w-96">
-                  <TasksCounter
-                    count={data ? data.pagination.meta.todoTasks : 0}
-                    type="todo"
-                  />
-                  <TasksCounter
-                    count={data ? data.pagination.meta.inProgressTasks : 0}
-                    type="inProgress"
-                  />
-                  <TasksCounter
-                    count={data ? data.pagination.meta.completedTasks : 0}
-                    type="completed"
-                  />
-                </div>
-              )}
+            {/* Pagination */}
+            {data && data.data.length > 0 && (
+              <TaskPagination paginationData={data.pagination} />
+            )}
 
-              {/* filter bar */}
-              {data && data.data && (
-                <FilterBar paginationData={data.pagination} />
-              )}
-
-              {/* display skeletons while loading */}
-              {!data &&
-                [...Array(queryLimit)].map((_entry, index) => (
-                  <DisplaySkeleton key={`${index}skel`} />
-                ))}
-
-              {/* display no tasks found if data is empty */}
-              {data && data.data.length == 0 && (
-                <div className="flex flex-col items-center justify-center w-full h-full">
-                  <h2 className="text-muted-foreground text-lg">
-                    No tasks found
-                  </h2>
-                </div>
-              )}
-
-              {/* display tasks when data is available */}
-              {data &&
-                data.data.length > 0 &&
-                data.data.map((task) => (
-                  <TaskCard
-                    key={task._id}
-                    title={task.title}
-                    description={task.description}
-                    status={task.status}
-                    priority={task.priority}
-                    dueDate={new Date(task.dueDate)}
-                    id={task._id}
-                    permissions={project?.permissions || {}}
-                  />
-                ))}
-
-              {/* pagination */}
-              {data && data.data.length > 0 && (
-                <TaskPagination paginationData={data.pagination} />
-              )}
-            </div>
           </div>
         </main>
       </SidebarInset>
 
+      <Toaster />
       {aiPanelEverOpened && (
-        <AiPanel
-          isOpen={isAiPanelOpen}
-          onClose={() => setIsAiPanelOpen(false)}
-          projectId={projectId}
-          projectName={project?.name}
-        />
+        <Suspense fallback={null}>
+          <AiPanel
+            isOpen={isAiPanelOpen}
+            onClose={() => setIsAiPanelOpen(false)}
+            projectId={projectId}
+            projectName={project?.name}
+          />
+        </Suspense>
       )}
     </SidebarProvider>
   );

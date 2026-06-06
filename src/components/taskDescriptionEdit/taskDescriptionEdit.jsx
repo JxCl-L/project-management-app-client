@@ -79,7 +79,7 @@ export default function TaskDescriptionEdit({
     >
       {/* Section header */}
       <div className="flex items-center gap-2 mb-2">
-        <span className="font-medium text-sm">Description</span>
+        <span className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Description</span>
         {canEdit && !isEditing && (
           <button
             onClick={handleEditClick}
@@ -93,6 +93,9 @@ export default function TaskDescriptionEdit({
         )}
       </div>
 
+      <div className={`rounded-md p-3 bg-muted/50 transition-colors ${canEdit ? "cursor-pointer" : ""}`}
+        onClick={!isEditing && canEdit ? handleEditClick : undefined}
+      >
       {isEditing ? (
         <div className="flex flex-col gap-2">
           <PresenceField field="description" fieldEditors={fieldEditors} roomUsers={roomUsers}>
@@ -108,7 +111,7 @@ export default function TaskDescriptionEdit({
               onBlur={() => onFieldBlur?.("description")}
               disabled={isPending}
               rows={3}
-              className="w-full bg-transparent border-0 border-b-2 border-primary outline-none resize-none text-sm leading-relaxed caret-primary disabled:opacity-50 pb-1 overflow-hidden"
+              className="w-full bg-transparent border-0 outline-none resize-none text-sm leading-relaxed caret-primary disabled:opacity-50 overflow-hidden"
             />
           </PresenceField>
 
@@ -120,7 +123,7 @@ export default function TaskDescriptionEdit({
               <button
                 onClick={handleSave}
                 disabled={isPending}
-                className="p-1 rounded text-green-500 hover:text-green-400 hover:bg-green-500/10 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+                className="p-1 rounded text-[hsl(var(--success))] hover:text-[hsl(var(--success))] hover:bg-[hsl(var(--success-muted))] disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
                 aria-label="Save description"
               >
                 <Check className="h-4 w-4" />
@@ -128,7 +131,7 @@ export default function TaskDescriptionEdit({
               <button
                 onClick={handleCancel}
                 disabled={isPending}
-                className="p-1 rounded text-red-500 hover:text-red-400 hover:bg-red-500/10 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+                className="p-1 rounded text-destructive hover:text-destructive hover:bg-destructive/10 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
                 aria-label="Cancel edit"
               >
                 <X className="h-4 w-4" />
@@ -137,15 +140,11 @@ export default function TaskDescriptionEdit({
           </div>
         </div>
       ) : (
-        <div
-          onClick={canEdit ? handleEditClick : undefined}
-          className={`text-sm leading-relaxed min-h-[2.5rem] rounded-md px-1 -mx-1 transition-colors duration-150 ${
-            canEdit ? "cursor-pointer hover:bg-muted/50" : ""
-          } ${isEmpty ? "text-muted-foreground italic" : "text-foreground"}`}
-        >
+        <div className={`text-sm leading-relaxed min-h-[2.5rem] ${isEmpty ? "text-muted-foreground italic" : "text-foreground"}`}>
           {isEmpty ? "Add a description…" : currentDescription}
         </div>
       )}
+      </div>
     </div>
   );
 }
